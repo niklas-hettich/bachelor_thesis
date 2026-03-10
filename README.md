@@ -69,6 +69,11 @@ The following paragraphs provide the commands necessary to recompute the results
 
 TODO
 
+```bash
+cd shell_scripts
+sbatch run_postprocessing_simalign.sh
+```
+
 ### Other configurations post-processing (SimAlign)
 
 TODO

@@ -125,7 +125,7 @@ def getMappedNumbers(file_path: str) -> List[Tuple[int, int]]:
 # TODO: refactor this function and extract repeating logic into a helper function
 # NOTE: the extended version of this function has the assumption that as soon as a punctuation mark is within a token, the next token should be a new word
 # this function transfers the embedding from token level to word level
-def transfer_tknembedding_to_word_level_embedding(token_vectors: np.ndarray, sentence_tkns: List[str], language: str, apply_mean_subtraction: bool) -> Tuple[np.ndarray, List[str]]:
+def transfer_tknembedding_to_word_level_embedding(token_vectors: np.ndarray, sentence_tkns: List[str], language: str) -> Tuple[np.ndarray, List[str]]:
     res_word_list = []
     res_vector_list = []
     temp_concat_tokens_str = ""
@@ -158,13 +158,10 @@ def transfer_tknembedding_to_word_level_embedding(token_vectors: np.ndarray, sen
 
     array_vector = np.array(res_vector_list)
 
-    if apply_mean_subtraction:
-        if language == "hsb":
-            centered_embeddings = array_vector - HSB_WORD_MEAN
-        else:
-            centered_embeddings = array_vector - DE_WORD_MEAN
+    if language == "hsb":
+        centered_embeddings = array_vector - HSB_WORD_MEAN
     else:
-        centered_embeddings = array_vector
+        centered_embeddings = array_vector - DE_WORD_MEAN
 
     return (centered_embeddings, res_word_list)
 
@@ -370,10 +367,7 @@ def track_segment_length_ratios(src_sentence_words: List[str], trg_sentence_word
 
 
 # implements main functionality of the post processing
-def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_path: str, output_file_name: str, 
-         window_size: int, min_segment_length: float, segment_detection_threshold: float, pair_filtering_threshold: float,
-         matching_method: str, token_type: str, mean_subtraction: bool, filter_stopwords_src: bool, 
-         filter_stopwords_trg: bool, exclude_punctuation: bool):
+def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_path: str, output_file_name: str, window_size: int, min_segment_length: float, segment_detection_threshold: float, pair_filtering_threshold: float):
 
     # TODO: uncomment this to track length ratios
     # if ".train." in mapping_file_name:
@@ -384,10 +378,8 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
     MODEL_TO_USE = model_path # "cis-lmu/glot500-base" --> model name from Hugging Face Hub or path to pretrained model
     embedding_helper = LanguageModelClass(model_path=MODEL_TO_USE)
     
-    matching_method_char_map = {'inter': 'a', 'mwmf': 'm', 'itermax': 'i'}
-    simalign_method_char = matching_method_char_map.get(matching_method, 'a')
 
-    myaligner = SentenceAligner(model=MODEL_TO_USE, token_type=token_type, matching_methods=simalign_method_char)
+    myaligner = SentenceAligner(model=MODEL_TO_USE, token_type="bpe", matching_methods="a")
 
     mapping_list = getMappedNumbers(mapping_file_name)
     src_sentences_dict = getSentencesFromFile(src_file_name)
@@ -410,8 +402,8 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
         src_token_vectors, trg_token_vectors = embedding_helper.get_token_embeddings([src_sentence, trg_sentence])
 
         # this function transfers the embedding from token level to word level
-        src_word_lvl_vectors, src_sentence_words = transfer_tknembedding_to_word_level_embedding(src_token_vectors, src_sentence_tkns, "hsb", mean_subtraction)
-        trg_word_lvl_vectors, trg_sentence_words = transfer_tknembedding_to_word_level_embedding(trg_token_vectors, trg_sentence_tkns, "de", mean_subtraction)
+        src_word_lvl_vectors, src_sentence_words = transfer_tknembedding_to_word_level_embedding(src_token_vectors, src_sentence_tkns, "hsb")
+        trg_word_lvl_vectors, trg_sentence_words = transfer_tknembedding_to_word_level_embedding(trg_token_vectors, trg_sentence_tkns, "de")
 
         if len(src_sentence_tkns) != src_token_vectors.shape[0] or len(trg_sentence_tkns) != trg_token_vectors.shape[0]:
             print("ATTENTION: length difference between tokenlist and vektor list for tokens. Skipping this sentence pair.")
@@ -427,20 +419,17 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
         inter (ArgMax): [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
         itermax (IterMax): [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
         """
-        alignments_tuple_list_src = myaligner.get_word_aligns(src_sentence_words, trg_sentence_words)[matching_method]     # copied following command from README SimAlign repo --> small changes
-        alignments_tuple_list_trg = myaligner.get_word_aligns(trg_sentence_words, src_sentence_words)[matching_method]     # copied following command from README SimAlign repo --> small changes
+        alignments_tuple_list_src = myaligner.get_word_aligns(src_sentence_words, trg_sentence_words)["inter"]     # copied following command from README SimAlign repo --> small changes
+        alignments_tuple_list_trg = myaligner.get_word_aligns(trg_sentence_words, src_sentence_words)["inter"]     # copied following command from README SimAlign repo --> small changes
 
         sim_scores_src_to_trg = get_similarity_scores(alignments_tuple_list_src, src_word_lvl_vectors, trg_word_lvl_vectors,len(src_sentence_words))
         sim_scores_trg_to_src = get_similarity_scores(alignments_tuple_list_trg, trg_word_lvl_vectors, src_word_lvl_vectors,len(trg_sentence_words))
 
-        if exclude_punctuation:
-            set_punctuation_to_zero(sim_scores_src_to_trg, src_sentence_words)
-            set_punctuation_to_zero(sim_scores_trg_to_src, trg_sentence_words)
+        # set_punctuation_to_zero(sim_scores_src_to_trg, src_sentence_words)
+        # set_punctuation_to_zero(sim_scores_trg_to_src, trg_sentence_words)
 
-        if filter_stopwords_src:
-            sim_scores_src_to_trg, src_sentence_words = delete_unaligned_stopwords(sim_scores_src_to_trg, src_sentence_words, alignments_tuple_list_trg, alignments_tuple_list_src, HSB_STOP_WORDS)
-        if filter_stopwords_trg:
-            sim_scores_trg_to_src, trg_sentence_words = delete_unaligned_stopwords(sim_scores_trg_to_src, trg_sentence_words, alignments_tuple_list_src, alignments_tuple_list_trg, GERMAN_STOP_WORDS)
+        # sim_scores_src_to_trg, src_sentence_words = delete_unaligned_stopwords(sim_scores_src_to_trg, src_sentence_words, alignments_tuple_list_trg, alignments_tuple_list_src, HSB_STOP_WORDS)
+        sim_scores_trg_to_src, trg_sentence_words = delete_unaligned_stopwords(sim_scores_trg_to_src, trg_sentence_words, alignments_tuple_list_src, alignments_tuple_list_trg, GERMAN_STOP_WORDS)
 
         avg_sim_scores_src_to_trg = average_sim_scores(sim_scores_src_to_trg, window_size)
         avg_sim_scores_trg_to_src = average_sim_scores(sim_scores_trg_to_src, window_size)
@@ -486,12 +475,6 @@ def parse_args():
     parser.add_argument("--min-segment-length", type=float, default=0.3, help="Minimum segment length as a ratio of the shorter sentence (default: 0.3).")
     parser.add_argument("--segment-threshold", type=float, default=0.3, help="Similarity threshold for a token to be part of a segment (default: 0.3).")
     parser.add_argument("--filtering-threshold", type=float, default=0.3, help="Final threshold for the segment-weighted score to keep a sentence pair (default: 0.3).")
-    parser.add_argument("--matching-method", type=str, choices=['inter', 'itermax', 'mwmf'], default='inter', help="SimAlign matching method (Argmax=inter, Itermax=itermax, Match=mwmf).")
-    parser.add_argument("--token-type", type=str, choices=['bpe', 'word'], default='bpe', help="SimAlign token type.")
-    parser.add_argument("--mean-subtraction", action="store_true", help="Enable Mean Vector Subtraction for isotropic embedding space.")
-    parser.add_argument("--filter-stopwords-src", action="store_true", help="Delete unaligned stopwords for the source language (HSB).")
-    parser.add_argument("--filter-stopwords-trg", action="store_true", help="Delete unaligned stopwords for the target language (DE).")
-    parser.add_argument("--exclude-punctuation", action="store_true", help="Set similarity scores of punctuation marks strictly to 0.0.")
     
     return parser.parse_args()
 
@@ -506,11 +489,5 @@ if __name__ == "__main__":
         window_size=args.window_size,
         min_segment_length=args.min_segment_length,
         segment_detection_threshold=args.segment_threshold,
-        pair_filtering_threshold=args.filtering_threshold,
-        matching_method=args.matching_method,
-        token_type=args.token_type,
-        mean_subtraction=args.mean_subtraction,
-        filter_stopwords_src=args.filter_stopwords_src,
-        filter_stopwords_trg=args.filter_stopwords_trg,
-        exclude_punctuation=args.exclude_punctuation
+        pair_filtering_threshold=args.filtering_threshold
     )
