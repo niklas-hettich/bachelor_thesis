@@ -2,7 +2,7 @@
 #SBATCH --job-name=PaSeMiLL_PostProcess
 #SBATCH --output=slurm_postprocess_%j.out
 #SBATCH --error=slurm_postprocess_%j.err
-#SBATCH --time=06:00:00         
+#SBATCH --time=10:00:00         
 #SBATCH --gres=gpu:1             
 #SBATCH --partition=lrz-hgx-a100-80x4
 
@@ -13,6 +13,6 @@ eval "$(/dss/dsshome1/0F/ge87fen2/miniconda3/bin/conda shell.bash hook)"
 conda activate pasemill_env
 echo "Conda environment 'pasemill_env' activated."
 
-jupyter nbconvert --to notebook --execute ../execution_notebooks/execute_postprocessing_simalign.ipynb --output ../execution_notebooks/execute_postprocessing_simalign_output.ipynb
+jupyter nbconvert --to notebook --execute ../execution_notebooks/execute_postprocessing_simalign_chap_5.5.2_no_stopword_filtering.ipynb --output ../execution_notebooks/execute_postprocessing_simalign_chap_5.5.2_no_stopword_filtering_output.ipynb
 
 echo "end-time: $(date)"

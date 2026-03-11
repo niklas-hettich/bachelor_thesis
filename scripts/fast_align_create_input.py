@@ -99,15 +99,15 @@ def main(mapping_file_name_train: str, mapping_file_name_test: str, src_file_nam
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Erstellt eine Input-Datei für fast_align basierend auf Sentence-Mappings.")
-    parser.add_argument("--mapping-train", type=str, required=True, help="Pfad zur Mapping-Datei (Training)")
-    parser.add_argument("--src-train", type=str, required=True, help="Pfad zur Quellsprachen-Datei (Training)")
-    parser.add_argument("--trg-train", type=str, required=True, help="Pfad zur Zielsprachen-Datei (Training)")
-    parser.add_argument("--mapping-test", type=str, required=True, help="Pfad zur Mapping-Datei (Test)")
-    parser.add_argument("--src-test", type=str, required=True, help="Pfad zur Quellsprachen-Datei (Test)")
-    parser.add_argument("--trg-test", type=str, required=True, help="Pfad zur Zielsprachen-Datei (Test)")
-    parser.add_argument("--model-path", type=str, required=True, help="Pfad oder Name des HuggingFace Modells")
-    parser.add_argument("--output", type=str, default="input_fast_align.txt", help="Name der Ausgabedatei (Standard: input_fast_align.txt)")
+    parser = argparse.ArgumentParser(description="Creates an input file for fast_align based on sentence mappings.")
+    parser.add_argument("--mapping-train", type=str, required=True, help="Path to the mapping file (training)")
+    parser.add_argument("--src-train", type=str, required=True, help="Path to the source language file (training)")
+    parser.add_argument("--trg-train", type=str, required=True, help="Path to target language file (training)")
+    parser.add_argument("--mapping-test", type=str, required=True, help="Path to mapping file (test)")
+    parser.add_argument("--src-test", type=str, required=True, help="Path to source language file (test)")
+    parser.add_argument("--trg-test", type=str, required=True, help="Path to target language file (test)")
+    parser.add_argument("--model-path", type=str, required=True, help="Path or name of the HuggingFace model")
+    parser.add_argument("--output", type=str, default="input_fast_align.txt", help="Name of the output file (Standard: input_fast_align.txt)")
     return parser.parse_args()
 
 if __name__ == "__main__":
