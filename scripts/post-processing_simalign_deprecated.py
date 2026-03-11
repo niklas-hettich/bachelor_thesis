@@ -29,7 +29,7 @@ GERMAN_STOP_WORDS = set(stopwords.words('german'))
 HSB_WORD_MEAN = np.loadtxt("../mean_vectors/mean_vector_hsb.txt")
 DE_WORD_MEAN = np.loadtxt("../mean_vectors/mean_vector_de.txt")
 
-# TODO: (comment/) uncomment the following lines if you (don't/) want to use stop word extraction for upper sorbian
+
 def load_custom_stopwords(file_path: str) -> set:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -41,7 +41,7 @@ def load_custom_stopwords(file_path: str) -> set:
 HSB_STOP_WORDS = load_custom_stopwords("../stop-words/hsb_generated_stopwords_final.txt")
 
 
-# TODO: cite further usage of tools --> check also existing "citations"
+
 # ---------------------------------------------------------------
 # Implementation of the segment alignment algorithm (with small adjustments e.g., SimAlign instead of Dictionaries) described in:
 # Authors: Viktor Hangya and Alexander Fraser
@@ -122,7 +122,7 @@ def getMappedNumbers(file_path: str) -> List[Tuple[int, int]]:
                 res.append((int(key_src_str), int(key_trg_str)))
     return res
 
-# TODO: refactor this function and extract repeating logic into a helper function
+
 # NOTE: the extended version of this function has the assumption that as soon as a punctuation mark is within a token, the next token should be a new word
 # this function transfers the embedding from token level to word level
 def transfer_tknembedding_to_word_level_embedding(token_vectors: np.ndarray, sentence_tkns: List[str], language: str) -> Tuple[np.ndarray, List[str]]:
@@ -175,8 +175,6 @@ def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
     return dot_product / (norm_vec1 * norm_vec2)
 
 # iterate through every token alignment provided by SimAlign --> indices in token list wher no alignment word in trg was found will appear in cos_scores as 0.0
-# TODO: this function needs to be modified --> currently if there are multiple alignments for one word, the similarity for the last listed alignment is calculated and saved. This method was written under the 
-# assumption that every token/ word can be mapped just once by Argmax. This is not the case because of internal tokenization of the already tokenized input
 def get_similarity_scores(alignments_tuple_list: List[Tuple], token_vectors_from: np.ndarray, token_vectors_to: np.ndarray, number_src_tkns: int) -> List[float]:
     cos_scores = [0.0] * number_src_tkns
     for id_from, id_to in alignments_tuple_list:
@@ -369,12 +367,6 @@ def track_segment_length_ratios(src_sentence_words: List[str], trg_sentence_word
 # implements main functionality of the post processing
 def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_path: str, output_file_name: str, window_size: int, min_segment_length: float, segment_detection_threshold: float, pair_filtering_threshold: float):
 
-    # TODO: uncomment this to track length ratios
-    # if ".train." in mapping_file_name:
-    #     gold_mapping_set = set(getMappedNumbers("../data/bucc_style_data/hsb-de/hsb-de.train.gold"))
-    # else:
-    #     gold_mapping_set = set(getMappedNumbers("../data/bucc_style_data/hsb-de/hsb-de.test.gold"))
-
     MODEL_TO_USE = model_path # "cis-lmu/glot500-base" --> model name from Hugging Face Hub or path to pretrained model
     embedding_helper = LanguageModelClass(model_path=MODEL_TO_USE)
     
@@ -384,11 +376,6 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
     mapping_list = getMappedNumbers(mapping_file_name)
     src_sentences_dict = getSentencesFromFile(src_file_name)
     trg_sentences_dict = getSentencesFromFile(trg_file_name)
-
-    # TODO: uncomment this part (and part at the end of loop before results are written down in file) to track the length ratios of all accepted sentence pairs
-    # stats_file_path = "/dss/dsshome1/0F/ge87fen2/PaSeMiLL/length_distribution_ratios/relative_length_distribution_filtered_sentences.txt"
-    # with open(stats_file_path, 'a', encoding='utf-8') as stats_file:
-    #     stats_file.write("start of new data set\n")
 
     new_mapping_list = []
     for i, (src_num, trg_num) in enumerate(mapping_list):
@@ -452,11 +439,6 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
         final_similarity_score = final_sim_score_for_sentence_pair(src_sentence_words, trg_sentence_words, sim_scores_src_to_trg, paired_segments)
 
         if final_similarity_score >= pair_filtering_threshold:
-            # is_gold_pair = False
-            # if (src_num, trg_num) in gold_mapping_set:
-            #     is_gold_pair = True
-            # track_segment_length_ratios(src_sentence_words, trg_sentence_words, paired_segments, final_similarity_score, is_gold_pair, stats_file)
-
             new_mapping_list.append((src_num, trg_num))
     
     with open(output_file_name,'w',encoding='utf-8') as output_file:

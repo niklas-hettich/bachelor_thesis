@@ -46,7 +46,6 @@ def getSentencesFromFile(file_path: str) -> Dict[int,str]:
                 res[key] = value
     return res
 
-# TODO: refactor this fanction and extract repeating logic into a helper function
 # NOTE: the extended version of this function has the assumption that as soon as a punctuation mark is within a token, the next token should be a new word
 # this function transfers the embedding from token level to word level
 def transfer_tkn_level_to_word_level(sentence_tkns: List[str]) -> List[str]:

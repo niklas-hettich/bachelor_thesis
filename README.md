@@ -220,10 +220,6 @@ sbatch execute_postprocessing_fast_align_chap_5.1.sh
 
 
 
-## Notes
-
-TODO
-
 ## Citations and Licences
 
 ### Data
