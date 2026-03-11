@@ -26,7 +26,6 @@ dependencies:
     - gensim==3.2.0
     - sentencepiece==0.2.0
     - sentence-transformers==3.2.1
-    # --- Visualisierung & Evaluierung ---
     - matplotlib==3.7.5
     - seaborn==0.13.2
     - sacremoses==0.1.1

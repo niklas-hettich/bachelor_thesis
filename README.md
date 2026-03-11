@@ -221,7 +221,86 @@ sbatch execute_postprocessing_fast_align_chap_5.1.sh
 
 
 ## Notes
-!!! TODO: check if this is okay !!!  and check PaSeMiLL folder for changes (CBIE)
-Please note that this repository contains code from [PaSeMiLL](https://github.com/shuokabe/PaSeMiLL) with slight adjustments in order to make the usage of the post-processing easier. The `code/` folder contains this code. 
-Furthermore, the `data/` folder contains the data for the Upper Sorbian-German langauge pair, proposed by [Belopsem](https://github.com/shuokabe/Belopsem).
-TODO: check licences for UnsupPSE, Pasemill, Belopsem, simalign, fast_align, language models
+
+TODO
+
+## Citations and Licences
+
+### Data
+
+The `data/` folder contains the dataset for the Upper Sorbian-German language pair (`hsb-de`), originally introduced in the [Belopsem](https://github.com/shuokabe/Belopsem) repository. 
+In accordance with the original repository, this dataset is licensed under the **[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)** license. 
+
+If you use this dataset, please cite the following paper:
+```bibtex
+@inproceedings{okabe-etal-2025-improving,
+    title = "Improving Parallel Sentence Mining for Low-Resource and Endangered Languages",
+    author = {Okabe, Shu  and
+      H{\"a}mmerl, Katharina  and
+      Fraser, Alexander},
+    editor = "Che, Wanxiang  and
+      Nabende, Joyce  and
+      Shutova, Ekaterina  and
+      Pilehvar, Mohammad Taher",
+    booktitle = "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers)",
+    month = jul,
+    year = "2025",
+    address = "Vienna, Austria",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.acl-short.17/",
+    doi = "10.18653/v1/2025.acl-short.17",
+    pages = "196--205",
+    ISBN = "979-8-89176-252-7",
+}
+```
+
+### Code and Methodology
+
+Please note that the `code/` folder contains code from [PaSeMiLL](https://github.com/shuokabe/PaSeMiLL) with slight adjustments in order to make the usage of the post-processing easier. Please cite usage of this code according to the [PaSeMiLL README](https://github.com/shuokabe/PaSeMiLL/blob/main/README.md) file.
+
+
+The post-processing segment extraction pipeline is an independent re-implementation based on the [UnsupPSE](https://github.com/hangyav/UnsupPSE) algorithm:
+
+```bibtex
+@inproceedings{hangya-fraser-2019-unsupervised,
+    title = "Unsupervised Parallel Sentence Extraction with Parallel Segment Detection Helps Machine Translation",
+    author = "Hangya, Viktor  and
+      Fraser, Alexander",
+    editor = "Korhonen, Anna  and
+      Traum, David  and
+      M{\`a}rquez, Llu{\'i}s",
+    booktitle = "Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics",
+    month = jul,
+    year = "2019",
+    address = "Florence, Italy",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/P19-1118/",
+    doi = "10.18653/v1/P19-1118",
+    pages = "1224--1234",
+    abstract = "Mining parallel sentences from comparable corpora is important. Most previous work relies on supervised systems, which are trained on parallel data, thus their applicability is problematic in low-resource scenarios. Recent developments in building unsupervised bilingual word embeddings made it possible to mine parallel sentences based on cosine similarities of source and target language words. We show that relying only on this information is not enough, since sentences often have similar words but different meanings. We detect continuous parallel segments in sentence pair candidates and rely on them when mining parallel sentences. We show better mining accuracy on three language pairs in a standard shared task on artificial data. We also provide the first experiments showing that parallel sentences mined from real life sources improve unsupervised MT. Our code is available, we hope it will be used to support low-resource MT research."
+}
+```
+
+### Language Models and Alignment Tools
+
+This repository relies on several external tools and pre-trained language models via the Hugging Face transformers library. Please consider citing the respective authors if you use them:
+
+#### Language Models
+
+- Glot500: Ayyoob Imani, Peiqin Lin, Amir Hossein Kargaran, Silvia Severini, Masoud Jalili Sabet, Nora Kassner, Chunlan Ma, Helmut Schmid, André Martins, François Yvon, and Hinrich Schütze. 2023. Glot500: Scaling Multilingual Corpora and Language Models to 500 Languages. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 1082–1117, Toronto, Canada. Association for Computational Linguistics. [Link](https://aclanthology.org/2023.acl-long.61/)
+
+- XLM-R: Alexis Conneau, Kartikay Khandelwal, Naman Goyal, Vishrav Chaudhary, Guillaume Wenzek, Francisco Guzmán, Edouard Grave, Myle Ott, Luke Zettlemoyer, and Veselin Stoyanov. 2020. Unsupervised Cross-lingual Representation Learning at Scale. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, pages 8440–8451, Online. Association for Computational Linguistics. [Link](https://aclanthology.org/2020.acl-main.747/)
+
+#### Word alignment
+
+This repository also relies on the following tools for word alignments. Please consider citing them if you use this pipeline:
+
+- SimAlign: Masoud Jalili Sabet, Philipp Dufter, François Yvon, and Hinrich Schütze. 2020. SimAlign: High Quality Word Alignments Without Parallel Training Data Using Static and Contextualized Embeddings. In Findings of the Association for Computational Linguistics: EMNLP 2020, pages 1627–1643, Online. Association for Computational Linguistics. [Link](https://aclanthology.org/2020.findings-emnlp.147/)  
+
+- fast_align: Chris Dyer, Victor Chahuneau, and Noah A. Smith. 2013. A Simple, Fast, and Effective Reparameterization of IBM Model 2. In Proceedings of the 2013 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 644–648, Atlanta, Georgia. Association for Computational Linguistics. [Link](https://aclanthology.org/N13-1073/)  
+
+
+
+
+
+
