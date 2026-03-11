@@ -2,17 +2,23 @@
 This repository contains the code for the Bachelor's thesis with the title "Parallel Sentence Mining in Low-Resource Scenarios through Segment-Level  Post-Processing".
 
 ## Setup
-TODO
+Before running the scripts, please ensure that you have [Conda](https://docs.conda.io/en/latest/) installed on your system or cluster. 
 
 ### Conda environment
-TODO
 
+To ensure full reproducibility, all necessary dependencies (including deep learning frameworks, NLP libraries, and specific versions) are specified in the `environment.yml` file. 
 
+You can recreate and activate the environment by executing the following commands from the root directory of this repository:
 
+```bash
+conda env create -f environment.yml
+conda activate bachelor_thesis_env
+```
 
 
 ## Pre-execution preparation (execution of PaSeMiLL pipeline)
 Please execute the following instructions to prepare the post-processing.  
+Note: The shell scripts use SLURM (`sbatch`). Please adjust the `#SBATCH` directives in the `.sh` files according to your cluster's configuration before executing them.  
 
 ### Execute PaSeMiLL for reproducing results from Chapter 5.1 and Chapter 5.4
 Please follow these steps to execute the PaSeMiLL pipeline:  
@@ -20,14 +26,14 @@ Please follow these steps to execute the PaSeMiLL pipeline:
 
 ```bash
 cd shell_scripts
-sbatch run_PaSeMiLL_with_CBIE.sh
+sbatch run_PaSeMiLL_no_CBIE.sh
 ```
 
 - To execute the PaSeMiLL pipeline with CBIE, use the following command:
 
 ```bash
 cd shell_scripts
-sbatch run_PaSeMiLL_no_CBIE.sh
+sbatch run_PaSeMiLL_with_CBIE.sh
 ```
 
 A folder with the title `results_full_glot500/` will appear, containing the output from the PaSeMiLL pipeline in the `mining/bucc2017/hsb-de/` sub-folder.
@@ -215,6 +221,7 @@ sbatch execute_postprocessing_fast_align_chap_5.1.sh
 
 
 ## Notes
-!!! TODO: check if this is okay !!!  
+!!! TODO: check if this is okay !!!  and check PaSeMiLL folder for changes (CBIE)
 Please note that this repository contains code from [PaSeMiLL](https://github.com/shuokabe/PaSeMiLL) with slight adjustments in order to make the usage of the post-processing easier. The `code/` folder contains this code. 
 Furthermore, the `data/` folder contains the data for the Upper Sorbian-German langauge pair, proposed by [Belopsem](https://github.com/shuokabe/Belopsem).
+TODO: check licences for UnsupPSE, Pasemill, Belopsem, simalign, fast_align, language models
