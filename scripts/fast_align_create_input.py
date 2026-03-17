@@ -122,21 +122,6 @@ if __name__ == "__main__":
         fast_align_input_filename=args.output
     )
 
-"""
-execute script with in terminal:
-
-python fast_align_create_input.py \
-  --mapping-train "/dss/dsshome1/0F/ge87fen2/PaSeMiLL/all_executions/execution_Belopsem_glot500_no_pretraining_v11_CBIE_adjusted/results_full_glot500/mining/bucc2017/hsb-de/glot500.hsb-de.train.sim.pred" \
-  --src-train "/dss/dsshome1/0F/ge87fen2/PaSeMiLL/data/bucc_style_data/hsb-de/hsb-de.train.hsb" \
-  --trg-train "/dss/dsshome1/0F/ge87fen2/PaSeMiLL/data/bucc_style_data/hsb-de/hsb-de.train.de" \
-  --mapping-test "/dss/dsshome1/0F/ge87fen2/PaSeMiLL/all_executions/execution_Belopsem_glot500_no_pretraining_v11_CBIE_adjusted/results_full_glot500/mining/bucc2017/hsb-de/glot500.hsb-de.test.sim.pred" \
-  --src-test "/dss/dsshome1/0F/ge87fen2/PaSeMiLL/data/bucc_style_data/hsb-de/hsb-de.test.hsb" \
-  --trg-test "/dss/dsshome1/0F/ge87fen2/PaSeMiLL/data/bucc_style_data/hsb-de/hsb-de.test.de" \
-  --model-path "cis-lmu/glot500-base" \
-  --output "/dss/dsshome1/0F/ge87fen2/PaSeMiLL/fast_align_input_output/hsb-de/input_fast_align.txt"
-
-"""
-
 # NOTE: this file prepares the required input file for the fast_align tool based on the predictions made by the PaSeMiLL pipeline
 # File content format: src_sentence ||| trg_sentence
 # NOTE: both sentences need to be separated into words and punctuations separated by whitespace

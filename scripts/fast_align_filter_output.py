@@ -121,22 +121,3 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     main(args.corpus, args.alignments, args.output, args.threshold)
-
-
-"""
-
-python fast_align_filter_output.py \
-  --corpus /dss/dsshome1/0F/ge87fen2/PaSeMiLL/fast_align_input_output/hsb-de/input_fast_align.txt \
-  --alignments /dss/dsshome1/0F/ge87fen2/PaSeMiLL/fast_align_input_output/hsb-de/forward.align \
-  --output /dss/dsshome1/0F/ge87fen2/PaSeMiLL/fast_align_input_output/hsb-de/output_filtered_src_to_trg.align \
-  --threshold 0.01
-
-AND
-
-python fast_align_filter_output.py \
-  --corpus /dss/dsshome1/0F/ge87fen2/PaSeMiLL/fast_align_input_output/hsb-de/input_fast_align.txt \
-  --alignments /dss/dsshome1/0F/ge87fen2/PaSeMiLL/fast_align_input_output/hsb-de/reverse.align \
-  --output /dss/dsshome1/0F/ge87fen2/PaSeMiLL/fast_align_input_output/hsb-de/output_filtered_trg_to_src.align \
-  --threshold 0.01
-
-"""

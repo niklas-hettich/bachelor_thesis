@@ -189,7 +189,7 @@ python fast_align_create_input.py \
 To filter the output of fast_align, execute the following commands from the root directory of this repository:
 
 ```bash
-python fast_align_filter_output.py \
+python scripts/fast_align_filter_output.py \
   --corpus fast_align_input_output/hsb-de/input_fast_align.txt \
   --alignments fast_align_input_output/hsb-de/forward.align \
   --output fast_align_input_output/hsb-de/output_filtered_src_to_trg.align \
@@ -199,7 +199,7 @@ python fast_align_filter_output.py \
 and 
 
 ```bash
-python fast_align_filter_output.py \
+python scripts/fast_align_filter_output.py \
   --corpus fast_align_input_output/hsb-de/input_fast_align.txt \
   --alignments fast_align_input_output/hsb-de/reverse.align \
   --output fast_align_input_output/hsb-de/output_filtered_trg_to_src.align \

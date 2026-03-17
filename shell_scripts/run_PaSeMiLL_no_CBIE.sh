@@ -7,15 +7,13 @@
 #SBATCH --partition=lrz-hgx-a100-80x4
 #SBATCH --mem=32G
 
-echo "Job gestartet auf Knoten: $(hostname)"
-echo "Startzeit: $(date)"
+echo "Job started on node: $(hostname)"
+echo "start-time: $(date)"
 
-eval "$(/dss/dsshome1/0F/ge87fen2/miniconda3/bin/conda shell.bash hook)"
-conda activate pasemill_env
-echo "Conda environment 'pasemill_env' activated."
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate bachelor_thesis_env
+echo "Conda environment 'bachelor_thesis_env' activated."
 
-echo "Starte Ausführung des Notebooks..."
-/dss/dsshome1/0F/ge87fen2/miniconda3/envs/pasemill_env/bin/jupyter nbconvert --to notebook --execute ../execution_notebooks/execute_PaSeMiLL_no_CBIE.ipynb --output ../execution_notebooks/execute_PaSeMiLL_no_CBIE_output.ipynb
+jupyter nbconvert --to notebook --execute ../execution_notebooks/execute_PaSeMiLL_no_CBIE.ipynb --output ../execution_notebooks/execute_PaSeMiLL_no_CBIE_output.ipynb
 
-echo "Notebook Ausführung beendet."
-echo "Endzeit: $(date)"
+echo "end-time: $(date)"

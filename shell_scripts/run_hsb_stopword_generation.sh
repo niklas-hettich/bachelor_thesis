@@ -6,12 +6,12 @@
 #SBATCH --gres=gpu:1
 #SBATCH --partition=lrz-hgx-a100-80x4
 
-echo "job started on pertition: $(hostname)"
+echo "Job started on pertition: $(hostname)"
 echo "start-time: $(date)"
 
-eval "$(/dss/dsshome1/0F/ge87fen2/miniconda3/bin/conda shell.bash hook)"
-conda activate pasemill_env
-echo "Conda environment 'pasemill_env' activated."
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate bachelor_thesis_env
+echo "Conda environment 'bachelor_thesis_env' activated."
 
 BASE_DIR="../data/bucc_style_data/hsb-de"
 TRAIN_FILE="$BASE_DIR/hsb-de.train.hsb"

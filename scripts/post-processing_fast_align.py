@@ -26,7 +26,8 @@ def load_custom_stopwords(file_path: str) -> set:
         print(e)
         return exit()
 
-# HSB_STOP_WORDS = load_custom_stopwords("/dss/dsshome1/0F/ge87fen2/PaSeMiLL/stop-words/hsb_generated_stopwords_final.txt")
+# HSB_STOP_WORDS = load_custom_stopwords("../stop-words/hsb_generated_stopwords_final.txt")
+
 
 
 # ---------------------------------------------------------------

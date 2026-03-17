@@ -9,9 +9,9 @@
 echo "Job started on partition: $(hostname)"
 echo "start-time: $(date)"
 
-eval "$(/dss/dsshome1/0F/ge87fen2/miniconda3/bin/conda shell.bash hook)"
-conda activate pasemill_env
-echo "Conda environment 'pasemill_env' activated."
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate bachelor_thesis_env
+echo "Conda environment 'bachelor_thesis_env' activated."
 
 jupyter nbconvert --to notebook --execute ../execution_notebooks/execute_postprocessing_simalign_chap_5.1.ipynb --output ../execution_notebooks/execute_postprocessing_simalign_chap_5.1_output.ipynb
 

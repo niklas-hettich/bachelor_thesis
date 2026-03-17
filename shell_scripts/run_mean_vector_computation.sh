@@ -9,9 +9,9 @@
 echo "Job started on partition: $(hostname)"
 echo "start-time: $(date)"
 
-eval "$(/dss/dsshome1/0F/ge87fen2/miniconda3/bin/conda shell.bash hook)"
-conda activate pasemill_env
-echo "Conda environment 'pasemill_env' activated."
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate bachelor_thesis_env
+echo "Conda environment 'bachelor_thesis_env' activated."
 
 SCRIPT_PATH="../mean_vectors/create_mean_vector.py"
 DATA_DIR="../data/bucc_style_data/hsb-de"
@@ -38,5 +38,4 @@ python "$SCRIPT_PATH" \
   --output_file_path "$DE_OUT" \
   --model_name "$MODEL"
 
-echo "computation finished."
 echo "end-time: $(date)"
