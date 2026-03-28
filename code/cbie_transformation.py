@@ -286,7 +286,7 @@ def transform_saved_embeddings(args, dataset_split, device, langs, model, tokeni
         # DATA TO SPECIFY TRAINING ETC
         data = dataset_split # 'test'
         # embedding_folder_path = f'./UnsupPSE/results_full_xlmr/new_embeddings/doc/bucc2017/{src_lang}-{trg_lang}'
-        embedding_folder_path = f'./results_full_glot500/new_embeddings/doc/bucc2017/{src_lang}-{trg_lang}'
+        embedding_folder_path = f'../all_executions/re-computation_folder/results_full_glot500/new_embeddings/doc/bucc2017/{src_lang}-{trg_lang}'
         #e.g.: UnsupPSE/results_full_xlmr/new_embeddings/doc/bucc2017/hsb-de/ glot500.hsb-de.test.de.vec	
         src_file = open(os.path.join(embedding_folder_path, f'{model_name}.{src_lang}-{trg_lang}.{data}.{src_lang}.vec'), 'r').read() # hsb
         trg_file = open(os.path.join(embedding_folder_path, f'{model_name}.{src_lang}-{trg_lang}.{data}.{trg_lang}.vec'), 'r').read() # de
@@ -395,7 +395,7 @@ def main():
         output_file_name = f'{model_name}.{src_lang}-{trg_lang}.{data}.{lang}.cbie.vec'
         convert_id_embed_to_list(id_list=id_list, embeddings_list=tf_embeddings, 
                 # output_path=f'UnsupPSE/results_full_xlmr/new_embeddings/doc/bucc2017/{src_lang}-{trg_lang}/{output_file_name}', 
-                output_path=f'./results_full_glot500/new_embeddings/doc/bucc2017/{src_lang}-{trg_lang}/{output_file_name}',
+                output_path=f'../all_executions/re-computation_folder/results_full_glot500/new_embeddings/doc/bucc2017/{src_lang}-{trg_lang}/{output_file_name}',
                 start_i=0)
         #convert_tf_to_list(tf_embeddings, # f'./embs/{trg_lang}-{src_lang}/{model_name}/8/{lang}_{data}_cbie.pt')
     return 0
