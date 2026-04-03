@@ -20,7 +20,7 @@ conda activate bachelor_thesis_env
 Please execute the following instructions to prepare the post-processing.  
 Note: The shell scripts use SLURM (`sbatch`). Please adjust the `#SBATCH` directives in the `.sh` files according to your cluster's configuration before executing them.  
 
-### Execute PaSeMiLL for reproducing results from Chapter 5.1 and Chapter 5.4
+### Execute PaSeMiLL for reproducing results from Chapter 4.2 and Chapter 4.5
 Please follow these steps to execute the PaSeMiLL pipeline:  
 - To execute the PaSeMiLL pipeline without CBIE, use the following command:  
 
@@ -36,7 +36,9 @@ cd shell_scripts
 sbatch run_PaSeMiLL_with_CBIE.sh
 ```
 
-A folder with the title `results_full_glot500/` will appear, containing the output from the PaSeMiLL pipeline in the `mining/bucc2017/hsb-de/` sub-folder.
+A folder with the title `results_full_glot500/` will appear, containing the output from the PaSeMiLL pipeline in the `mining/bucc2017/hsb-de/` sub-folder. 
+Note that both commands (with and without CBIE) create a `results_full_glot500/` folder. 
+Please delete the folder before executing the other command to prevent incorrect results.
 
 ### Mean vector generation
 
@@ -70,7 +72,7 @@ Please note that the resulting list needs to be post-processed manually accordin
 
 The following paragraphs provide the commands necessary to recompute the results, presented in Chapter 5 of the thesis.
 
-### Chapter 5.1: Best-performing post-processing (SimAlign)
+### Chapter 4.2: Best-performing post-processing (SimAlign)
 
 ```bash
 cd shell_scripts
@@ -78,7 +80,7 @@ sbatch execute_postprocessing_simalign_chap_5.1.sh
 ```
 
 
-### Chapter 5.2: Changing the underlying language model (from Glot500 to XLM-R)
+### Chapter 4.3: Changing the underlying language model (from Glot500 to XLM-R)
 
 
 ```bash
@@ -88,7 +90,7 @@ sbatch execute_postprocessing_simalign_chap_5.2.sh
 
 
 
-### Chapter 5.3.1: Algorithm
+### Chapter 4.4.1: Algorithm
 
 Itermax:
 
@@ -104,7 +106,7 @@ cd shell_scripts
 sbatch execute_postprocessing_simalign_chap_5.3.1_Match.sh
 ```
 
-### Chapter 5.3.2: Token granularity
+### Chapter 4.4.2: Token granularity
 
 Word level:
 
@@ -113,7 +115,7 @@ cd shell_scripts
 sbatch execute_postprocessing_simalign_chap_5.3.2_wordLvl.sh
 ```
 
-### Chapter 5.5.1: Mean vector subtraction
+### Chapter 4.6.1: Mean vector subtraction
 
 No mean vector subtraction:
 
@@ -122,7 +124,7 @@ cd shell_scripts
 sbatch execute_postprocessing_simalign_chap_5.5.1_no_subtraction.sh
 ```
 
-### Chapter 5.5.2: Stop-word filtering
+### Chapter 4.6.2: Stop-word filtering
 
 No stop-word filtering:
 
@@ -145,7 +147,7 @@ cd shell_scripts
 sbatch execute_postprocessing_simalign_chap_5.5.2_src_trg_stopword_filtering.sh
 ```
 
-### Chapter 5.5.3: Punctuation handling
+### Chapter 4.6.3: Punctuation handling
 
 Exclude punctuation marks in sentences:
 
