@@ -25,8 +25,6 @@ def get_sentences_and_count_words(file_paths, output_path, top_n):
         except FileNotFoundError:
             print(f"WARNING: file '{file_path}' not found")
             continue
-    # print(f"finished analysis. {total_lines} line processed")
-    # print(f"number of unique words found: {len(word_counts)}")
     
     if len(word_counts) == 0:
         print("ERROR: no words found")
@@ -41,7 +39,7 @@ def get_sentences_and_count_words(file_paths, output_path, top_n):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generates a word frequency list for Sorbian from multiple files.")
-    parser.add_argument("--input_files", type=str, nargs='+', required=True, help="List of the .hsb files (e.g., file1.hsb file2.hsb).")
+    parser.add_argument("--input_files", type=str, nargs='+', required=True, help="List of the low-resource language files.")
     parser.add_argument("--output_file", type=str, required=True, help="Path for the output file.")
     parser.add_argument("--top_n", type=int, default=200, help="Number of words to be stored in the output.")
     

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=HSB_Stopwords
+#SBATCH --job-name=OCI_Stopwords
 #SBATCH --output=slurm_stopwords_%j.out
 #SBATCH --error=slurm_stopwords_%j.err
 #SBATCH --time=10:00:00
@@ -13,10 +13,10 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate bachelor_thesis_env
 echo "Conda environment 'bachelor_thesis_env' activated."
 
-BASE_DIR="../data/bucc_style_data/hsb-de"
-TRAIN_FILE="$BASE_DIR/hsb-de.train.hsb"
-TEST_FILE="$BASE_DIR/hsb-de.test.hsb"
-OUTPUT_FILE="../stop-words/hsb_generated_stopwords_unfiltered.txt"
+BASE_DIR="../data/bucc_style_data/oci-es"
+TRAIN_FILE="$BASE_DIR/oci-es.train.oci"
+TEST_FILE="$BASE_DIR/oci-es.test.oci"
+OUTPUT_FILE="../stop-words/oci_generated_stopwords_unfiltered.txt"
 
 python ../stop-words/generate_stopwords.py \
   --input_files "$TRAIN_FILE" "$TEST_FILE" \

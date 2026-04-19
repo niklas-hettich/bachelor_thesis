@@ -46,7 +46,7 @@ Execute the following command to compute the mean vector for each language.
 
 ```bash
 cd shell_scripts
-sbatch run_mean_vector_computation.sh
+sbatch run_mean_vector_computation_hsb_de.sh
 ```
 
 The mean vectors can be found in the `mean_vectors/` folder
