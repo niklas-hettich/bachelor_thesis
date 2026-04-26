@@ -2,7 +2,7 @@
 #SBATCH --job-name=HSB_Stopwords
 #SBATCH --output=slurm_stopwords_%j.out
 #SBATCH --error=slurm_stopwords_%j.err
-#SBATCH --time=10:00:00
+#SBATCH --time=00:10:00
 #SBATCH --gres=gpu:1
 #SBATCH --partition=lrz-hgx-a100-80x4
 

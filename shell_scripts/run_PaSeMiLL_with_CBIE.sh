@@ -2,7 +2,7 @@
 #SBATCH --job-name=PaSeMiLL_with_CBIE
 #SBATCH --output=slurm_notebook_%j.out
 #SBATCH --error=slurm_notebook_%j.err
-#SBATCH --time=03:00:00          
+#SBATCH --time=00:30:00          
 #SBATCH --gres=gpu:1
 #SBATCH --partition=lrz-hgx-a100-80x4
 #SBATCH --mem=32G

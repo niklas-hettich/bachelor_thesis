@@ -2,7 +2,7 @@
 #SBATCH --job-name=PaSeMiLL_PostProcess
 #SBATCH --output=slurm_postprocess_%j.out
 #SBATCH --error=slurm_postprocess_%j.err
-#SBATCH --time=10:00:00         
+#SBATCH --time=02:00:00         
 #SBATCH --gres=gpu:1             
 #SBATCH --partition=lrz-hgx-a100-80x4
 
