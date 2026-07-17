@@ -9,25 +9,11 @@ import re
 import torch
 import nltk
 from nltk.corpus import stopwords
+from create_mean_vector_dynamically import calculate_mean_vector
 
 PUNCTUATION_SET = set(string.punctuation)
-NEW_WORD_PREFIX = "\u2581" #NOTE: probably different for other language models
-nltk.download('stopwords')
-DE_STOP_WORDS = set(stopwords.words('german'))
-
-HSB_WORD_MEAN = np.loadtxt("../mean_vectors/mean_vector_hsb.txt")
-DE_WORD_MEAN = np.loadtxt("../mean_vectors/mean_vector_de.txt")
-
-def load_custom_stopwords(file_path: str) -> set:
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return set(line.strip() for line in f if line.strip())
-    except FileNotFoundError as e:        
-        print(e)
-        return exit()
-
-# HSB_STOP_WORDS = load_custom_stopwords("../stop-words/hsb_generated_stopwords_final.txt")
-
+NEW_WORD_PREFIX = "\u2581"          # NOTE: perhaps different for other language models
+nltk.download('stopwords', quiet=True)
 
 
 # ---------------------------------------------------------------
@@ -39,7 +25,6 @@ def load_custom_stopwords(file_path: str) -> set:
 # ---------------------------------------------------------------
 
 
-# NOTE: this function needs to use the same model like PaSeMiLL pipeline before --> model needs to be exchanged if model gets exchanged for pipeline !!!!
 class LanguageModelClass:
 
     # initialization of language model
@@ -51,14 +36,16 @@ class LanguageModelClass:
         self.model.to(self.device) # --> loading model into hardware/ on GPU
         self.model.eval() #--> model is used for predictions instead of training
 
+
     # separates a sentence into its tokens using the initialized language model/ its tokenizer
     def get_tokens_for_sentence(self, sentence: str) -> List[str]:
         return self.tokenizer.tokenize(sentence)
 
+
     # method should return embedding for each token of sentence
     @torch.no_grad() # deactivates the calculation of the gradient for faster inference
     def get_token_embeddings(self, sentences: List[str]) -> List[np.ndarray]:
-        inputs = self.tokenizer(sentences,padding=True,truncation=True, return_tensors="pt") # generates tokens in form of vectors --> return_tensors="pt" generates output as PyTorch-tensors which is the correct format for the PyTorch models
+        inputs = self.tokenizer(sentences, padding=True, truncation=True, return_tensors="pt") # generates tokens in form of vectors --> return_tensors="pt" generates output as PyTorch-tensors which is the correct format for the PyTorch models
         inputs = {key: val.to(self.device) for key, val in inputs.items()} # transfers the data to the correct hardware (cpu to gpu)
         hidden_states = self.model(**inputs).hidden_states # tokenized sentences are fed into the neural network --> forward pass is executed by the model
         layer_embeddings = hidden_states[self.layer] #chooses results from layer 8 (specified in __init__ function)
@@ -71,8 +58,18 @@ class LanguageModelClass:
             sentence_vectors = layer_embeddings[i, 1 : real_tokens_count - 1, :]
 
             output_vectors.append(sentence_vectors.cpu().numpy())
-            
+
         return output_vectors
+
+
+def load_custom_stopwords(file_path: str) -> set:
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return set(line.strip() for line in f if line.strip())
+    except FileNotFoundError as e:        
+        print(f"Stopword file not found: {e}")
+        sys.exit(1)
+
 
 # function extracts training/ test data from file and returns dictionary
 def getSentencesFromFile(file_path: str) -> Dict[int,str]:
@@ -93,6 +90,7 @@ def getSentencesFromFile(file_path: str) -> Dict[int,str]:
                 res[key] = value
     return res
 
+
 # this function processes the sentence mapping file (output) from the pipeline
 def getMappedNumbers(file_path: str) -> List[Tuple[int, int]]:
     """
@@ -111,9 +109,10 @@ def getMappedNumbers(file_path: str) -> List[Tuple[int, int]]:
                 res.append((int(key_src_str), int(key_trg_str)))
     return res
 
+
 # NOTE: the extended version of this function has the assumption that as soon as a punctuation mark is within a token, the next token should be a new word
 # this function transfers the embedding from token level to word level
-def transfer_tknembedding_to_word_level_embedding(token_vectors: np.ndarray, sentence_tkns: List[str], language: str) -> Tuple[np.ndarray, List[str]]:
+def transfer_tknembedding_to_word_level_embedding(token_vectors: np.ndarray, sentence_tkns: List[str], apply_mean_subtraction: bool, word_mean: np.ndarray) -> Tuple[np.ndarray, List[str]]:
     res_word_list = []
     res_vector_list = []
     temp_concat_tokens_str = ""
@@ -139,15 +138,20 @@ def transfer_tknembedding_to_word_level_embedding(token_vectors: np.ndarray, sen
         else:
             temp_concat_tokens_str += tkn_temp
             temp_concat_vectors.append(token_vectors[i])
+
     if len(temp_concat_tokens_str) > 0:
         res_word_list.append(temp_concat_tokens_str)
         res_vector_list.append(np.mean(temp_concat_vectors, axis=0))
+
     array_vector = np.array(res_vector_list)
-    if language == "hsb":
-        centered_embeddings = array_vector - HSB_WORD_MEAN
+
+    if apply_mean_subtraction:
+        centered_embeddings = array_vector - word_mean
     else:
-        centered_embeddings = array_vector - DE_WORD_MEAN
+        centered_embeddings = array_vector
+
     return (centered_embeddings, res_word_list)
+
 
 #calculates the cosine similarity between two vectors and returns the similarity as a float number
 def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
@@ -158,24 +162,36 @@ def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
         return 0.0
     return dot_product / (norm_vec1 * norm_vec2)
 
+
 # iterate through every token alignment provided by fast_align --> indices in token list wher no alignment word in trg was found will appear in cos_scores as 0.0
-def get_similarity_scores(argmax_alignments_tuple_list: List[Tuple], token_vectors_from: np.ndarray, token_vectors_to: np.ndarray, number_src_tkns: int) -> List[float]:
+def get_similarity_scores(alignments_tuple_list: List[Tuple], token_vectors_from: np.ndarray, token_vectors_to: np.ndarray, number_src_tkns: int) -> List[float]:
     cos_scores = [0.0] * number_src_tkns
-    for id_from, id_to in argmax_alignments_tuple_list:
+    for id_from, id_to in alignments_tuple_list:
         vector_from = token_vectors_from[id_from]
         vector_to = token_vectors_to[id_to]
         cos_scores[id_from] = cosine_similarity(vector_from, vector_to)
     return cos_scores
 
-def set_punctuation_to_zero(sim_scores: List[float], word_list: List[str]):
-    if len(sim_scores) != len(word_list):
-        print("PROBLEM: set_punctuation_to_zero() function detected different lengths for both lists")
-        sys.exit()
-    for i in range(len(sim_scores)):
-        current_word = word_list[i]
-        current_word = current_word.replace(NEW_WORD_PREFIX, "").strip()
-        if all(ch in PUNCTUATION_SET for ch in current_word):
-            sim_scores[i] = 0.0
+
+def remove_terminal_punctuation(sim_scores: List[float], sentence_words: List[str], alignments_from: List[Tuple[int, int]], alignments_to: List[Tuple[int, int]]) -> Tuple[List[float], List[str], List[Tuple[int, int]], List[Tuple[int, int]]]:
+
+    if len(sentence_words) == 0:
+        return sim_scores, sentence_words, alignments_from, alignments_to
+    
+    last_word = sentence_words[-1].replace(NEW_WORD_PREFIX, "").strip()
+        
+    if all(ch in PUNCTUATION_SET for ch in last_word):
+        last_idx = len(sentence_words) - 1
+        
+        sim_scores_new = sim_scores[:-1]
+        sentence_words_new = sentence_words[:-1]
+        
+        alignments_from_new = [(my_id, other_id) for (my_id, other_id) in alignments_from if my_id != last_idx]
+        alignments_to_new = [(other_id, my_id) for (other_id, my_id) in alignments_to if my_id != last_idx]
+        
+        return sim_scores_new, sentence_words_new, alignments_from_new, alignments_to_new
+        
+    return sim_scores, sentence_words, alignments_from, alignments_to
 
 
 # averages the similarity scores based on a window
@@ -183,7 +199,7 @@ def average_sim_scores(similarity_list: List[float], window_size: int) -> List[f
     if window_size % 2 == 0:
         window_size += 1
     radius = (window_size - 1) // 2
-    
+
     if radius == 0:
         return similarity_list
         
@@ -199,6 +215,7 @@ def average_sim_scores(similarity_list: List[float], window_size: int) -> List[f
         averaged_scores.append(avg_score)
         
     return averaged_scores
+
 
 # this function extracts the segments based on averaged similarity scores and a minimum segment length --> returns a list of (start,end) index tuples 
 def extract_segments(averaged_similarity_score_list: List[float], token_list: List[str], minimum_segment_length: int, threshold: float) -> List[Tuple[int,int]]:
@@ -222,18 +239,19 @@ def extract_segments(averaged_similarity_score_list: List[float], token_list: Li
             res_list.append((current_segment_start_index, len(averaged_similarity_score_list)))
     return res_list
 
+
 # this function pairs the potential segments and returns a list of tuples with the index tuples of the segments
 def pair_segments(
         src_segment_list: List[Tuple[int,int]], 
         trg_segment_list: List[Tuple[int,int]],
         word_alignments: List[Tuple[int,int]], 
-        max_length_diff: int = 5) -> List[Tuple[Tuple[int,int],Tuple[int,int]]]:
+        max_length_ratio: float = 0.25) -> List[Tuple[Tuple[int,int],Tuple[int,int]]]:
     
     paired_segment_list = []
     available_trg_segments = list(trg_segment_list)
 
     for (s_start,s_end) in src_segment_list:
-        best_match_count = -1
+        best_match_count = 0
         best_match_index = -1
         s_len = s_end - s_start
 
@@ -241,7 +259,12 @@ def pair_segments(
             t_len = t_end - t_start
 
             # filter ii) from paper
-            if abs(s_len - t_len) > max_length_diff:
+            # if abs(s_len - t_len) > max_length_diff:
+            #     continue
+
+            # adapted filter ii) from paper --> now relative difference instead of total difference
+            max_len = max(s_len, t_len)
+            if max_len > 0 and (abs(s_len - t_len) / max_len) > max_length_ratio:
                 continue
 
             current_match_count = 0
@@ -259,6 +282,7 @@ def pair_segments(
 
     return paired_segment_list
 
+
 # returns the length of the longest src segment
 def longest_segment_length(paired_segments: List[Tuple[Tuple[int,int],Tuple[int,int]]]) -> int:
     res = 0
@@ -267,6 +291,7 @@ def longest_segment_length(paired_segments: List[Tuple[Tuple[int,int],Tuple[int,
         if (end_index - start_index) > res:
             res = end_index - start_index
     return res
+
 
 # calculates the final similarity score of a sentence pair to decide afterwards if the pair should be kept or not
 def final_sim_score_for_sentence_pair(src_sentence_words: List[str], trg_sentence_words: List[str], sim_scores_src_to_trg: List[float], paired_segments: List[Tuple[Tuple[int,int],Tuple[int,int]]]) -> float:
@@ -278,23 +303,9 @@ def final_sim_score_for_sentence_pair(src_sentence_words: List[str], trg_sentenc
     number_of_trg_words = len(trg_sentence_words)
     return (sum_scores/number_of_trg_words) * (length_of_longest_segment/number_of_src_words)
 
-# calculates the final similarity score of a sentence pair to decide afterwards if the pair should be kept or not
-def final_sim_score_for_sentence_pair_segment_based(src_sentence_words: List[str], trg_sentence_words: List[str], sim_scores_src_to_trg: List[float], paired_segments: List[Tuple[Tuple[int,int],Tuple[int,int]]]) -> float:
-    if len(paired_segments) == 0:
-        return 0.0
-    
-    (src_start_id_incl, src_end_id_excl), _ = paired_segments[0]
-    sum_scores = 0.0
-    for i in range(src_start_id_incl, src_end_id_excl):
-        sum_scores += sim_scores_src_to_trg[i]
-    src_segment_length = src_end_id_excl - src_start_id_incl
-
-    length_of_longest_segment = longest_segment_length(paired_segments)
-    number_of_trg_words = len(trg_sentence_words)
-    return (sum_scores/number_of_trg_words) * (length_of_longest_segment/src_segment_length)
 
 # this function deletes all stopwords which didn't get aligned before --> score gets deleted, word gets deleted and tuple lists are modified accordningly
-def delete_unaligned_stopwords(sim_scores_src_to_trg: List[float], src_sentence_words: List[str], argmax_alignments_tuple_list_trg: List[Tuple[int,int]], argmax_alignments_tuple_list_src: List[Tuple[int,int]], stop_word_set: set) -> Tuple[List[float], List[str]]:
+def delete_unaligned_stopwords(sim_scores_src_to_trg: List[float], src_sentence_words: List[str], alignments_tuple_list_trg: List[Tuple[int,int]], alignments_tuple_list_src: List[Tuple[int,int]], stop_word_set: set) -> Tuple[List[float], List[str]]:
     sim_scores_src_to_trg_new = []
     src_sentence_words_new = []
     old_to_new_map: Dict[int,int] = {}
@@ -308,18 +319,17 @@ def delete_unaligned_stopwords(sim_scores_src_to_trg: List[float], src_sentence_
             old_to_new_map[old_id] = new_index
             new_index += 1
     
-    for i, ((src_id_src, old_trg_id_src),(old_trg_id_trg, src_id_trg)) in enumerate(zip(argmax_alignments_tuple_list_trg, argmax_alignments_tuple_list_src)):
+    for i, ((src_id_src, old_trg_id_src),(old_trg_id_trg, src_id_trg)) in enumerate(zip(alignments_tuple_list_trg, alignments_tuple_list_src)):
         if old_trg_id_src in old_to_new_map:
-            argmax_alignments_tuple_list_trg[i] = (src_id_src, old_to_new_map[old_trg_id_src])
+            alignments_tuple_list_trg[i] = (src_id_src, old_to_new_map[old_trg_id_src])
         if old_trg_id_trg in old_to_new_map:
-            argmax_alignments_tuple_list_src[i] = (old_to_new_map[old_trg_id_trg], src_id_trg)
+            alignments_tuple_list_src[i] = (old_to_new_map[old_trg_id_trg], src_id_trg)
     return (sim_scores_src_to_trg_new, src_sentence_words_new)
 
 
 def track_segment_length_ratios(src_sentence_words: List[str], trg_sentence_words: List[str], paired_segments: List[Tuple[Tuple[int,int],Tuple[int,int]]], final_similarity_score: float, is_gold_pair: bool, output_file_handle):
     number_words_src_sentence = len(src_sentence_words)
     number_words_trg_sentence = len(trg_sentence_words)
-
 
     if number_words_src_sentence == 0 or number_words_trg_sentence == 0:
         return
@@ -342,9 +352,27 @@ def track_segment_length_ratios(src_sentence_words: List[str], trg_sentence_word
 
     src_ratio = length_longest_src_segm/number_words_src_sentence
     trg_ratio = length_longest_trg_segm/number_words_trg_sentence
-    
+
+
     output_file_handle.write(f"{src_ratio:.4f}\t{trg_ratio:.4f},\tfinal score:{final_similarity_score},\tgold_pair:{is_gold_pair}\n")
     return
+
+def get_language_name(file_name: str, full_name: bool) -> str:
+    language_abbreviation = file_name.split(".")[-1]
+
+    if not full_name:
+       return language_abbreviation
+    
+    language_map = {
+        'ru': 'russian', 
+        'es': 'spanish', 
+        'de': 'german'
+    }
+
+    if language_abbreviation not in language_map:
+        raise ValueError(f"Error: Unknown language extracted: '{language_abbreviation}' from '{file_name}'")
+    
+    return language_map[language_abbreviation]
 
 # processes each line / alignment of sentence pair
 def process_alignments_helper(curr_line: str) ->List[Tuple[int,int]]:
@@ -378,10 +406,23 @@ def change_order_of_alignments_and_sort(tuple_list: List[Tuple[int,int]], revers
     return sorted(res_list, key=lambda x: x[0])
 
 # implements main functionality of the post processing
-def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_path: str, output_file_name: str, align_src_trg_file: str, align_trg_src_file: str, window_size: int, min_segment_length: float, segment_detection_threshold: float, pair_filtering_threshold: float):
+def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_path: str, output_file_name: str, align_src_trg_file: str, align_trg_src_file: str, 
+        window_size: int, min_segment_length: float, segment_detection_threshold: float, pair_filtering_threshold: float,
+        mean_subtraction: bool, filter_stopwords_src: bool, filter_stopwords_trg: bool, exclude_punctuation: bool, dynamic_mean: bool):
 
     MODEL_TO_USE = model_path # "cis-lmu/glot500-base" --> model name from Hugging Face Hub or path to pretrained model
     embedding_helper = LanguageModelClass(model_path=MODEL_TO_USE)
+
+    src_language_abbreviation = get_language_name(src_file_name, False)
+    trg_language_abbreviation = get_language_name(trg_file_name, False)
+    trg_full_language_name = get_language_name(trg_file_name, True)
+
+    if dynamic_mean:
+        LRL_WORD_MEAN = calculate_mean_vector(src_file_name, embedding_helper)
+        HRL_WORD_MEAN = calculate_mean_vector(trg_file_name, embedding_helper)
+    else:
+        LRL_WORD_MEAN = np.loadtxt(f"../mean_vectors/mean_vector_{src_language_abbreviation}.txt")
+        HRL_WORD_MEAN = np.loadtxt(f"../mean_vectors/mean_vector_{trg_language_abbreviation}.txt")
 
     # NOTE: the output file passed as an argument contains all sentences (train and test) in the respective direction (src->trg or trg->src)
     all_sents_alignments_tuple_list_src = process_alignments_from_file(align_src_trg_file) 
@@ -396,9 +437,7 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
         all_alignments_tuple_list_trg = all_sents_alignments_tuple_list_trg[:number_sentences] # train sentence pair alignments trg->src (number_sentences represents the number of training sentences)
 
     mapping_list = getMappedNumbers(mapping_file_name)
-
     src_sentences_dict = getSentencesFromFile(src_file_name)
-
     trg_sentences_dict = getSentencesFromFile(trg_file_name)
 
     new_mapping_list = []
@@ -413,8 +452,8 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
         src_token_vectors, trg_token_vectors = embedding_helper.get_token_embeddings([src_sentence, trg_sentence])
 
         # this function transfers the embedding from token level to word level
-        src_word_lvl_vectors, src_sentence_words = transfer_tknembedding_to_word_level_embedding(src_token_vectors, src_sentence_tkns, "hsb")
-        trg_word_lvl_vectors, trg_sentence_words = transfer_tknembedding_to_word_level_embedding(trg_token_vectors, trg_sentence_tkns, "de")
+        src_word_lvl_vectors, src_sentence_words = transfer_tknembedding_to_word_level_embedding(src_token_vectors, src_sentence_tkns, mean_subtraction, LRL_WORD_MEAN)
+        trg_word_lvl_vectors, trg_sentence_words = transfer_tknembedding_to_word_level_embedding(trg_token_vectors, trg_sentence_tkns, mean_subtraction, HRL_WORD_MEAN)
 
         if len(src_sentence_tkns) != src_token_vectors.shape[0] or len(trg_sentence_tkns) != trg_token_vectors.shape[0]:
             print("ATTENTION: length difference between tokenlist and vektor list for tokens. Skipping this sentence pair.")
@@ -426,17 +465,23 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
         # extract alignments for respective sentence pair for both directions
         alignments_tuple_list_src = all_alignments_tuple_list_src[i]
         alignments_tuple_list_trg = all_alignments_tuple_list_trg[i]
-
         alignments_tuple_list_src = change_order_of_alignments_and_sort(alignments_tuple_list_src, False)
         sim_scores_src_to_trg = get_similarity_scores(alignments_tuple_list_src, src_word_lvl_vectors, trg_word_lvl_vectors,len(src_sentence_words))
         alignments_tuple_list_trg = change_order_of_alignments_and_sort(alignments_tuple_list_trg, True)
         sim_scores_trg_to_src = get_similarity_scores(alignments_tuple_list_trg, trg_word_lvl_vectors, src_word_lvl_vectors,len(trg_sentence_words))
 
-        # set_punctuation_to_zero(sim_scores_src_to_trg, src_sentence_words)
-        # set_punctuation_to_zero(sim_scores_trg_to_src, trg_sentence_words)
+        if exclude_punctuation:
+            sim_scores_src_to_trg, src_sentence_words, alignments_tuple_list_src, alignments_tuple_list_trg = remove_terminal_punctuation(
+                sim_scores_src_to_trg, src_sentence_words, alignments_tuple_list_src, alignments_tuple_list_trg)
+            sim_scores_trg_to_src, trg_sentence_words, alignments_tuple_list_trg, alignments_tuple_list_src = remove_terminal_punctuation(
+                sim_scores_trg_to_src, trg_sentence_words, alignments_tuple_list_trg, alignments_tuple_list_src)
 
-        # sim_scores_src_to_trg, src_sentence_words = delete_unaligned_stopwords(sim_scores_src_to_trg, src_sentence_words, alignments_tuple_list_trg, alignments_tuple_list_src, HSB_STOP_WORDS)
-        sim_scores_trg_to_src, trg_sentence_words = delete_unaligned_stopwords(sim_scores_trg_to_src, trg_sentence_words, alignments_tuple_list_src, alignments_tuple_list_trg, DE_STOP_WORDS)
+        if filter_stopwords_src:
+            LRL_STOP_WORDS = load_custom_stopwords(f"../stop-words/{src_language_abbreviation}_generated_stopwords_final.txt")
+            sim_scores_src_to_trg, src_sentence_words = delete_unaligned_stopwords(sim_scores_src_to_trg, src_sentence_words, alignments_tuple_list_trg, alignments_tuple_list_src, LRL_STOP_WORDS)
+        if filter_stopwords_trg:
+            HRL_STOP_WORDS = set(stopwords.words(trg_full_language_name))
+            sim_scores_trg_to_src, trg_sentence_words = delete_unaligned_stopwords(sim_scores_trg_to_src, trg_sentence_words, alignments_tuple_list_src, alignments_tuple_list_trg, HRL_STOP_WORDS)
 
         avg_sim_scores_src_to_trg = average_sim_scores(sim_scores_src_to_trg, window_size)
         avg_sim_scores_trg_to_src = average_sim_scores(sim_scores_trg_to_src, window_size)
@@ -454,7 +499,7 @@ def main(mapping_file_name: str, src_file_name: str, trg_file_name: str, model_p
         segment_list_src_indices = extract_segments(avg_sim_scores_src_to_trg,src_sentence_words,abs_min_segment_length, segment_detection_threshold)
         segment_list_trg_indices = extract_segments(avg_sim_scores_trg_to_src,trg_sentence_words,abs_min_segment_length, segment_detection_threshold)
 
-        paired_segments = pair_segments(segment_list_src_indices, segment_list_trg_indices, alignments_tuple_list_src, 5)
+        paired_segments = pair_segments(segment_list_src_indices, segment_list_trg_indices, alignments_tuple_list_src, 0.25)
 
         final_similarity_score = final_sim_score_for_sentence_pair(src_sentence_words, trg_sentence_words, sim_scores_src_to_trg, paired_segments)
 
@@ -479,6 +524,11 @@ def parse_args():
     parser.add_argument("--min-segment-length", type=float, default=0.3, help="Minimum segment length as a ratioof the shorter sentence (default: 0.3).")
     parser.add_argument("--segment-threshold", type=float, default=0.3, help="Similarity threshold for a token to be part of a segment (default: 0.3).")
     parser.add_argument("--filtering-threshold", type=float, default=0.3, help="Final threshold for the segment-weighted score to keep a sentence pair (default: 0.3).")
+    parser.add_argument("--mean-subtraction", action="store_true", help="Enable Mean Vector Subtraction for isotropic embedding space.")
+    parser.add_argument("--filter-stopwords-src", action="store_true", help="Delete unaligned stopwords for the source language (HSB).")
+    parser.add_argument("--filter-stopwords-trg", action="store_true", help="Delete unaligned stopwords for the target language (DE).")
+    parser.add_argument("--exclude-punctuation", action="store_true", help="Set similarity scores of punctuation marks strictly to 0.0.")
+    parser.add_argument("--dynamic-mean", action="store_true", help="Calculate the mean vector dynamically instead of loading it statically.")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -494,5 +544,10 @@ if __name__ == "__main__":
         window_size=args.window_size,
         min_segment_length=args.min_segment_length,
         segment_detection_threshold=args.segment_threshold,
-        pair_filtering_threshold=args.filtering_threshold
+        pair_filtering_threshold=args.filtering_threshold,
+        mean_subtraction=args.mean_subtraction,
+        filter_stopwords_src=args.filter_stopwords_src,
+        filter_stopwords_trg=args.filter_stopwords_trg,
+        exclude_punctuation=args.exclude_punctuation,
+        dynamic_mean=args.dynamic_mean
     )
