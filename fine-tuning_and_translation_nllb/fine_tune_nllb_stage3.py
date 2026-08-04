@@ -9,12 +9,12 @@ from transformers import (
     Seq2SeqTrainer
 )
 
-data_path = "data/stage3_train_data.jsonl"
-output_dir = "models/nllb-finetuned-stage3"
+data_path = "/dss/dsshome1/0F/ge87fen2/testFolder/NLLB/data/jsonl_file_folder_chv-ru/stage3_train_data_static_wiki.jsonl"
+output_dir = "/dss/dsshome1/0F/ge87fen2/testFolder/NLLB/models/chv-ru/nllb-finetuned-stage3_static_wiki"
 
 model_name = "facebook/nllb-200-distilled-600M"
-source_lang = "zxx_Latn"
-target_lang = "deu_Latn"
+source_lang = "chv_Cyrl"
+target_lang = "rus_Cyrl"
 
 max_length = 128
 batch_size = 8
@@ -22,16 +22,41 @@ epochs = 3
 learning_rate = 2e-5
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+donor_lang_mapping = {
+    "hsb_Latn": "ces_Latn",
+    "chv_Cyrl": "kaz_Cyrl"
+}
+
+new_tokens = []
+vocab = tokenizer.get_vocab()
+for lang in [source_lang, target_lang]:
+    if lang not in vocab and lang not in tokenizer.additional_special_tokens:
+        new_tokens.append(lang)
+
+if new_tokens:
+    tokenizer.add_special_tokens({'additional_special_tokens': new_tokens})
+    model.resize_token_embeddings(len(tokenizer))
+    
+    with torch.no_grad():
+        new_vocab = tokenizer.get_vocab()
+        for new_lang in new_tokens:
+            if new_lang in donor_lang_mapping:
+                donor_lang = donor_lang_mapping[new_lang]
+                if donor_lang in new_vocab:
+                    new_id = new_vocab[new_lang]
+                    donor_id = new_vocab[donor_lang]
+                    model.model.shared.weight[new_id] = model.model.shared.weight[donor_id].clone()
+
 tokenizer.src_lang = source_lang
 tokenizer.tgt_lang = target_lang
-
-model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
 raw_dataset = load_dataset("json", data_files={"train": data_path})
 
 def preprocess_function(examples):
-    inputs = [ex["hsb"] for ex in examples["translation"]]
-    targets = [ex["de"] for ex in examples["translation"]]
+    inputs = [ex["chv"] for ex in examples["translation"]]
+    targets = [ex["ru"] for ex in examples["translation"]]
     
     model_inputs = tokenizer(
         inputs,
