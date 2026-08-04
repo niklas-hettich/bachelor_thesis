@@ -1,3 +1,14 @@
+import os
+import ctypes
+
+conda_lib_path = os.path.expanduser(
+    "~/miniconda3/envs/bachelor_thesis_env/lib/libstdc++.so.6"
+)
+try:
+    ctypes.CDLL(conda_lib_path, mode=ctypes.RTLD_GLOBAL)
+except Exception:
+    pass
+
 from transformers import AutoModel, AutoTokenizer
 from typing import Dict, List, Set, Tuple
 
